@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parking Location Details</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        h1 {
+            background-color: #007acc;
+            color: #fff;
+            padding: 20px;
+            margin: 0;
+            text-align: center;
+        }
+
+        #parkSelection {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        label {
+            font-weight: bold;
+            font-size: 18px;
+            margin-right: 10px;
+        }
+
+        select {
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        #parkDetails {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        h2 {
+            color: #007acc;
+            font-size: 24px;
+            margin-top: 0;
+        }
+
+        p {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Otoparkta yer var mı?</h1>
+    <div id="parkSelection">
+        <label for="parkDropdown">Park yeri seç:</label>
+        <select id="parkDropdown"></select>
+    </div>
+    <div id="parkDetails"></div>
+
+    <script>
+        // Function to populate the dropdown list with park names
+        function populateDropdown() {
+            fetch('https://api.ibb.gov.tr/ispark/Park')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    const parkDropdown = document.getElementById('parkDropdown');
+                    // Populate the dropdown with park names
+                    data.forEach(park => {
+                        const option = document.createElement('option');
+                        option.value = park.parkID;
+                        option.textContent = park.parkName;
+                        parkDropdown.appendChild(option);
+                    });
+
+                    // Add an event listener to the dropdown to update park details
+                    parkDropdown.addEventListener('change', function () {
+                        const selectedParkID = this.value;
+                        getParkDetails(selectedParkID);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        }
+
+        // Function to make the API request and display park details
+        function getParkDetails(parkID) {
+            fetch(`https://api.ibb.gov.tr/ispark/ParkDetay?id=${parkID}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Display the data on the page as before
+                    const parkDetailsDiv = document.getElementById('parkDetails');
+                    parkDetailsDiv.innerHTML = `
+                        <h2>Otopark: ${data[0].parkName}</h2>
+                        <p>Boş yer: <b> ${data[0].emptyCapacity} </b></p>
+                        <p>Kapasite: ${data[0].capacity}</p>
+                        
+                        <p>Güncellenme zamanı: ${data[0].updateDate}</p>
+                        <p>Otopark çalışma saatleri: ${data[0].workHours}</p>
+                        <p>Park Tipi: ${data[0].parkType}</p>
+                        <p>Ücretsiz bekleme süresi: ${data[0].freeTime}</p>
+                        <p>Bölge: ${data[0].district}</p>
+                    `;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        }
+
+        // Call the function to populate the dropdown
+        populateDropdown();
+    </script>
+</body>
+</html>
