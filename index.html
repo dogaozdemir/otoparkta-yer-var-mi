@@ -101,7 +101,7 @@
                     data.forEach(park => {
                         const option = document.createElement('option');
                         option.value = park.parkID;
-                        option.textContent = park.parkName;
+                        option.textContent = park.parkName + ' - ' + park.district;
                         parkDropdown.appendChild(option);
                     });
 
