@@ -6,18 +6,15 @@
     <meta name="description" content="İstanbul ilindeki ispark otopark yerlerini arayabileceğiniz bir platform. Otopark kapanış saatleri, açılış saatleri ve ücretsiz bekleme süresi gibi bilgileri bulun.">
     <meta name="keywords" content="ispark, İstanbul otopark, otopark yerleri, ispark saatleri, ücretsiz bekleme süresi">
 
-
     <!-- Open Graph Protocol Tags -->
     <meta property="og:title" content="İstanbul İspark Otopark Yeri Bulma">
     <meta property="og:description" content="İstanbul ilindeki ispark otopark yerlerini arayabileceğiniz bir platform. Otopark kapanış saatleri, açılış saatleri ve ücretsiz bekleme süresi gibi bilgileri bulun.">
     <meta property="og:type" content="website">
 
-
     <!-- Twitter Card Tags -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="İstanbul İspark Otopark Yeri Bulma">
     <meta name="twitter:description" content="İstanbul ilindeki ispark otopark yerlerini arayabileceğiniz bir platform. Otopark kapanış saatleri, açılış saatleri ve ücretsiz bekleme süresi gibi bilgileri bulun.">
-
 
     <title>İstanbul İspark Otopark Yeri Bulma</title>
     <meta charset="UTF-8">
@@ -50,11 +47,12 @@
             margin-right: 10px;
         }
 
-        select {
+        select, input[type="text"] {
             padding: 10px;
             font-size: 16px;
             border: 1px solid #ccc;
             border-radius: 5px;
+            margin-right: 10px;
         }
 
         #parkDetails {
@@ -80,43 +78,43 @@
 <body>
     <h1>Otoparkta yer var mı?</h1>
     <div id="parkSelection">
-        <label for="parkDropdown">Park yeri seç:</label>
-        <select id="parkDropdown"></select>
+        <label for="parkSearch">Park yeri ara:</label>
+        <input type="text" id="parkSearch" oninput="filterParks()">
+        <select id="parkDropdown" onchange="getParkDetails(this.value)"></select>
     </div>
     <div id="parkDetails"></div>
 
     <script>
-    
+        let allParks = [];
+
         function populateDropdown() {
             fetch('https://api.ibb.gov.tr/ispark/Park')
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.json();
-                })
+                .then(response => response.json())
                 .then(data => {
-                    const parkDropdown = document.getElementById('parkDropdown');
-                    // Populate the dropdown with park names
-                    data.forEach(park => {
-                        const option = document.createElement('option');
-                        option.value = park.parkID;
-                        option.textContent = park.parkName + ' - ' + park.district;
-                        parkDropdown.appendChild(option);
-                    });
-
-                    // Add an event listener to the dropdown to update park details
-                    parkDropdown.addEventListener('change', function () {
-                        const selectedParkID = this.value;
-                        getParkDetails(selectedParkID);
-                    });
+                    allParks = data;
+                    updateDropdown(allParks);
                 })
-                .catch(error => {
-                    console.error('Error:', error);
-                });
+                .catch(error => console.error('Error:', error));
         }
 
-        // Function to make the API request and display park details
+        function updateDropdown(parks) {
+            const parkDropdown = document.getElementById('parkDropdown');
+            parkDropdown.innerHTML = '';
+
+            parks.forEach(park => {
+                const option = document.createElement('option');
+                option.value = park.parkID;
+                option.textContent = park.parkName + ' - ' + park.district;
+                parkDropdown.appendChild(option);
+            });
+        }
+
+        function filterParks() {
+            const searchTerm = document.getElementById('parkSearch').value.toLowerCase();
+            const filteredParks = allParks.filter(park => park.parkName.toLowerCase().includes(searchTerm) || park.district.toLowerCase().includes(searchTerm));
+            updateDropdown(filteredParks);
+        }
+
         function getParkDetails(parkID) {
             fetch(`https://api.ibb.gov.tr/ispark/ParkDetay?id=${parkID}`)
                 .then(response => {
@@ -126,7 +124,6 @@
                     return response.json();
                 })
                 .then(data => {
-                    // Display the data on the page as before
                     const parkDetailsDiv = document.getElementById('parkDetails');
                     parkDetailsDiv.innerHTML = `
                         <h2>Otopark: ${data[0].parkName}</h2>
